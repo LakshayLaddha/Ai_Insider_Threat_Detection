@@ -1,0 +1,15 @@
+# Base image
+FROM node:18
+
+# Set working directory
+WORKDIR /app
+
+# Copy React app files
+COPY ../../dashboard ./dashboard
+
+# Install dependencies and build
+RUN cd dashboard && npm install && npm run build
+
+# Serve the built app with a static server
+RUN npm install -g serve
+CMD ["serve", "-s", "dashboard/build", "-l", "3000"]
