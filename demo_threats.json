@@ -1,0 +1,92 @@
+[
+  {
+    "user_id": "admin",
+    "action": "EXECUTE",
+    "timestamp": "2025-04-09T02:21:30.639830",
+    "date": "2025-04-09",
+    "resource": "INFRASTRUCTURE_CONFIG",
+    "ip_address": "103.152.36.49",
+    "data_size": 1752890
+  },
+  {
+    "user_id": "lakshay.laddha",
+    "action": "MODIFY",
+    "timestamp": "2025-04-09T01:21:30.639830",
+    "date": "2025-04-09",
+    "resource": "SOURCE_CODE",
+    "ip_address": "45.227.253.77",
+    "data_size": 4453396
+  },
+  {
+    "user_id": "lakshay.laddha",
+    "action": "DOWNLOAD",
+    "timestamp": "2025-04-09T04:21:30.639830",
+    "date": "2025-04-09",
+    "resource": "SECURITY_KEYS",
+    "ip_address": "45.227.253.77",
+    "data_size": 3102850
+  },
+  {
+    "user_id": "lakshay.laddha",
+    "action": "EXECUTE",
+    "timestamp": "2025-04-09T02:21:30.639830",
+    "date": "2025-04-09",
+    "resource": "INFRASTRUCTURE_CONFIG",
+    "ip_address": "45.227.253.77",
+    "data_size": 4550495
+  },
+  {
+    "user_id": "lakshay.laddha",
+    "action": "DELETE",
+    "timestamp": "2025-04-09T03:21:30.639830",
+    "date": "2025-04-09",
+    "resource": "SECURITY_KEYS",
+    "ip_address": "103.152.36.49",
+    "data_size": 610552
+  },
+  {
+    "user_id": "system",
+    "action": "DOWNLOAD",
+    "timestamp": "2025-04-09T04:21:30.639830",
+    "date": "2025-04-09",
+    "resource": "SECURITY_KEYS",
+    "ip_address": "45.227.253.77",
+    "data_size": 1721444
+  },
+  {
+    "user_id": "admin",
+    "action": "DELETE",
+    "timestamp": "2025-04-09T04:21:30.639830",
+    "date": "2025-04-09",
+    "resource": "INFRASTRUCTURE_CONFIG",
+    "ip_address": "185.176.27.132",
+    "data_size": 4485351
+  },
+  {
+    "user_id": "system",
+    "action": "EXECUTE",
+    "timestamp": "2025-04-09T01:21:30.639830",
+    "date": "2025-04-09",
+    "resource": "SECURITY_KEYS",
+    "ip_address": "103.152.36.49",
+    "data_size": 4842093
+  },
+  {
+    "user_id": "lakshay.laddha",
+    "action": "EXECUTE",
+    "timestamp": "2025-04-09T01:21:30.639830",
+    "date": "2025-04-09",
+    "resource": "INFRASTRUCTURE_CONFIG",
+    "ip_address": "185.176.27.132",
+    "data_size": 3661247
+  },
+  {
+    "user_id": "admin",
+    "action": "MODIFY",
+    "timestamp": "2025-04-09T02:21:30.639830",
+    "date": "2025-04-09",
+    "resource": "SECURITY_KEYS",
+    "ip_address": "185.176.27.132",
+    "data_size": 963530
+  }
+]

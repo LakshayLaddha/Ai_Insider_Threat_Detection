@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Insider Threat Detection Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body { background-color: #f5f5f5; }
+        .navbar-brand { font-weight: bold; }
+        .header { background-color: #343a40; color: white; padding: 30px 0; margin-bottom: 30px; }
+        .threat-card { margin-bottom: 20px; transition: transform 0.2s; }
+        .threat-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .high { background-color: #f8d7da; border-color: #f5c2c7; }
+        .medium { background-color: #fff3cd; border-color: #ffecb5; }
+        .low { background-color: #d1e7dd; border-color: #badbcc; }
+        .chart-container { height: 300px; margin-bottom: 30px; }
+        .feature-badge { 
+            display: inline-block; 
+            padding: 4px 8px; 
+            margin: 2px; 
+            border-radius: 12px; 
+            font-size: 0.85em;
+        }
+        .card-header { font-weight: bold; }
+        .footer { background-color: #343a40; color: white; padding: 20px 0; margin-top: 40px; }
+        .icon-block { text-align: center; padding: 15px; }
+        .icon-block i { font-size: 2.5rem; margin-bottom: 15px; }
+        .demo-btn { margin-top: 20px; }
+        .dashboard-header { 
+            margin-bottom: 20px; 
+            padding-bottom: 10px; 
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .spinner-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="spinner-container">
+            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h4>Loading Dashboard...</h4>
+            <p>Starting API and processing data...</p>
+        </div>
+    </div>
+
+    <div class="header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1><i class="fas fa-shield-alt"></i> AI Insider Threat Detection</h1>
+                    <p class="lead">Machine learning-powered security analytics for cloud environments</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-outline-light">
+                        <i class="fas fa-bell"></i> Alerts <span class="badge bg-danger">New</span>
+                    </button>
+                    <button class="btn btn-light ms-2">
+                        <i class="fas fa-user-shield"></i> Security Center
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="dashboard-header">
+            <h2>Security Dashboard</h2>
+            <div>
+                <button class="btn btn-primary" id="generateDataBtn">
+                    <i class="fas fa-sync me-2"></i> Generate New Data
+                </button>
+                <div class="btn-group ms-2">
+                    <button class="btn btn-outline-secondary">Today</button>
+                    <button class="btn btn-outline-secondary">This Week</button>
+                    <button class="btn btn-primary">All Time</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-danger text-white">
+                    <div class="card-body text-center">
+                        <h3 class="display-4 fw-bold" id="high-threats">0</h3>
+                        <h5 class="card-title">High Risk Threats</h5>
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body text-center">
+                        <h3 class="display-4 fw-bold" id="medium-threats">0</h3>
+                        <h5 class="card-title">Medium Risk</h5>
+                        <i class="fas fa-exclamation-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h3 class="display-4 fw-bold" id="low-threats">0</h3>
+                        <h5 class="card-title">Low Risk</h5>
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h3 class="display-4 fw-bold" id="total-activities">0</h3>
+                        <h5 class="card-title">Total Activities</h5>
+                        <i class="fas fa-chart-line fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <i class="fas fa-chart-area me-2"></i> Threat Timeline
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="timelineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <i class="fas fa-chart-pie me-2"></i> Risk Distribution
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="riskChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <i class="fas fa-chart-bar me-2"></i> Threat Actions
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="actionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <i class="fas fa-chart-bar me-2"></i> Threat Resources
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="resourceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="mt-4 mb-3"><i class="fas fa-bell me-2"></i> Recent Threat Alerts</h3>
+        
+        <div class="row" id="threatCards">
+            <!-- Threat cards will be added here -->
+        </div>
+        
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <i class="fas fa-info-circle me-2"></i> About This Project
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-9">
+                                <h4>AI-Powered Insider Threat Detection</h4>
+                                <p>This project implements a machine learning system that can detect potential insider threats within cloud environments. It uses an Isolation Forest algorithm to identify anomalous user activities based on multiple behavioral features.</p>
+                                
+                                <h5>Key Features:</h5>
+                                <ul>
+                                    <li><strong>Anomaly Detection:</strong> Uses unsupervised learning to identify behavior that deviates from normal patterns</li>
+                                    <li><strong>Multi-factor Analysis:</strong> Evaluates time of activity, resource sensitivity, action type, data volume, and more</li>
+                                    <li><strong>Real-time Alerting:</strong> Scores potential threats in real-time for immediate security response</li>
+                                    <li><strong>Explainable AI:</strong> Provides clear reasons why activities are flagged as suspicious</li>
+                                </ul>
+                                
+                                <p class="mt-3">
+                                    <strong>Technologies Used:</strong> Python, FastAPI, scikit-learn, Docker, React
+                                </p>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="icon-block">
+                                    <i class="fas fa-brain text-primary"></i>
+                                    <h5>Machine Learning</h5>
+                                </div>
+                                <div class="icon-block">
+                                    <i class="fas fa-shield-alt text-danger"></i>
+                                    <h5>Security Analytics</h5>
+                                </div>
+                                <div class="icon-block">
+                                    <i class="fas fa-project-diagram text-success"></i>
+                                    <h5>Full Stack App</h5>
+                                </div>
+                                <div class="text-center demo-btn">
+                                    <button class="btn btn-primary btn-lg" id="generateMoreBtn">
+                                        <i class="fas fa-play-circle me-2"></i> Generate More Data
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>AI Insider Threat Detection</h5>
+                    <p>Created by Lakshay Laddha</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <p>© 2025 - All Rights Reserved</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // API endpoints
+        const API_BASE_URL = 'http://localhost:8080'; 
+        const THREATS_URL = `${API_BASE_URL}/threats`;
+        const GENERATE_DATA_URL = `${API_BASE_URL}/generate-demo-data`;
+        const HEALTH_URL = `${API_BASE_URL}/health`;
+        
+        // Global threat data
+        let threatData = [];
+        
+        // Charts
+        let timelineChart;
+        let riskChart;
+        let actionChart;
+        let resourceChart;
+        
+        // Check if API is running
+        async function checkApiHealth() {
+            try {
+                const response = await fetch(HEALTH_URL);
+                if (response.ok) {
+                    return true;
+                } else {
+                    console.error('API health check failed');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error checking API health:', error);
+                return false;
+            }
+        }
+        
+        // Start the API if needed
+        async function ensureApiRunning() {
+            const isHealthy = await checkApiHealth();
+            if (!isHealthy) {
+                console.log('Starting API...');
+                
+                // In a real implementation, you might use a different approach to start the API
+                // This is just a placeholder that assumes the API is started externally
+                
+                // Wait a bit and check again
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                const retryHealth = await checkApiHealth();
+                
+                if (!retryHealth) {
+                    // Show error message if API is still not running
+                    alert('Unable to connect to the API. Please make sure the API is running at ' + API_BASE_URL);
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        // Generate demo threat data
+        async function generateDemoData(count = 10) {
+            try {
+                const response = await fetch(`${GENERATE_DATA_URL}?count=${count}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Generated demo data:', data);
+                    
+                    // Reload threats after generating data
+                    loadThreats();
+                } else {
+                    console.error('Failed to generate demo data:', await response.text());
+                }
+            } catch (error) {
+                console.error('Error generating demo data:', error);
+            }
+        }
+        
+        // Load saved threats
+        async function loadThreats() {
+            try {
+                const response = await fetch(THREATS_URL);
+                if (response.ok) {
+                    const data = await response.json();
+                    threatData = data.threats || [];
+                    
+                    // Update the dashboard
+                    updateDashboard();
+                } else {
+                    console.error('Failed to load threats:', await response.text());
+                }
+            } catch (error) {
+                console.error('Error loading threats:', error);
+            }
+        }
+        
+        // Update dashboard with threat data
+        function updateDashboard() {
+            // Count threats by severity
+            let highThreats = 0;
+            let mediumThreats = 0;
+            let lowThreats = 0;
+            
+            threatData.forEach(threat => {
+                if (threat.threat_score > 0.7) highThreats++;
+                else if (threat.threat_score > 0.4) mediumThreats++;
+                else lowThreats++;
+            });
+            
+            // Update counters
+            document.getElementById('high-threats').textContent = highThreats;
+            document.getElementById('medium-threats').textContent = mediumThreats;
+            document.getElementById('low-threats').textContent = lowThreats;
+            document.getElementById('total-activities').textContent = threatData.length;
+            
+            // Update threat cards
+            updateThreatCards();
+            
+            // Update charts
+            updateCharts();
+        }
+        
+        // Update the threat cards display
+        function updateThreatCards() {
+            const threatCardsContainer = document.getElementById('threatCards');
+            threatCardsContainer.innerHTML = '';
+            
+            // Sort threats by score (highest first)
+            const sortedThreats = [...threatData].sort((a, b) => b.threat_score - a.threat_score);
+            
+            // Get top 6 threats by score
+            sortedThreats.slice(0, 6).forEach(threat => {
+                const date = new Date(threat.timestamp);
+                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                let severityClass = threat.threat_score > 0.7 ? 'high' : (threat.threat_score > 0.4 ? 'medium' : 'low');
+                
+                const cardHtml = `
+                    <div class="col-md-6 col-lg-4 threat-card">
+                        <div class="card ${severityClass}">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas ${threat.threat_score > 0.7 ? 'fa-exclamation-triangle text-danger' : 
+                                                 (threat.threat_score > 0.4 ? 'fa-exclamation-circle text-warning' : 
+                                                 'fa-info-circle text-success')}"></i>
+                                    <span class="ms-2">${threat.user_id}</span>
+                                </div>
+                                <span class="badge ${threat.threat_score > 0.7 ? 'bg-danger' : 
+                                                 (threat.threat_score > 0.4 ? 'bg-warning text-dark' : 
+                                                 'bg-success')}">
+                                    ${Math.round(threat.threat_score * 100)}%
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="fas ${threat.action === 'DOWNLOAD' ? 'fa-download' : 
+                                                 (threat.action === 'DELETE' ? 'fa-trash-alt' :
+                                                 (threat.action === 'MODIFY' ? 'fa-edit' :
+                                                 (threat.action === 'EXECUTE' ? 'fa-code' :
+                                                 (threat.action === 'READ' ? 'fa-book' :
+                                                 (threat.action === 'WRITE' ? 'fa-pen' : 'fa-sign-in-alt')))))}"></i>
+                                    ${threat.action} ${threat.resource}
+                                </h5>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <small class="text-muted"><i class="fas fa-network-wired"></i> ${threat.ip_address}</small>
+                                    <small class="text-muted"><i class="fas fa-database"></i> ${Math.round(threat.data_size/1024)} KB</small>
+                                </div>
+                                
+                                <div class="progress mb-3">
+                                    <div class="progress-bar ${threat.threat_score > 0.7 ? 'bg-danger' : (threat.threat_score > 0.4 ? 'bg-warning' : 'bg-success')}" 
+                                         role="progressbar" style="width: ${threat.threat_score * 100}%" 
+                                         aria-valuenow="${threat.threat_score * 100}" aria-valuemin="0" aria-valuemax="100">
+                                        ${Math.round(threat.threat_score * 100)}%
+                                    </div>
+                                </div>
+                                
+                                <p class="card-text text-muted mb-3">
+                                    <i class="far fa-clock"></i> ${formattedDate}
+                                </p>
+                                
+                                <div>
+                                    ${threat.details.anomalous_features.map(feature => {
+                                        const significance = feature.significance * 100;
+                                        let colorClass = significance > 70 ? 'bg-danger' : (significance > 40 ? 'bg-warning text-dark' : 'bg-success');
+                                        return `<span class="feature-badge ${colorClass}">
+                                                  <i class="fas fa-exclamation-circle me-1"></i>
+                                                  ${feature.feature}: ${Math.round(significance)}%
+                                                </span>`;
+                                    }).join('')}
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent d-flex justify-content-between">
+                                <button class="btn btn-sm btn-outline-secondary">Investigate</button>
+                                <button class="btn btn-sm btn-outline-danger">Alert</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                threatCardsContainer.innerHTML += cardHtml;
+            });
+        }
+        
+        // Update all charts
+        function updateCharts() {
+            updateTimelineChart();
+            updateRiskChart();
+            updateActionChart();
+            updateResourceChart();
+        }
+        
+        // Update timeline chart
+        function updateTimelineChart() {
+            // Create time buckets
+            const hourCounts = {
+                normal: Array(24).fill(0),
+                threats: Array(24).fill(0)
+            };
+            
+            // Count activities by hour and type
+            threatData.forEach(threat => {
+                const hour = new Date(threat.timestamp).getHours();
+                if (threat.is_threat) {
+                    hourCounts.threats[hour]++;
+                } else {
+                    hourCounts.normal[hour]++;
+                }
+            });
+            
+            // Create or update chart
+            const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+            
+            if (timelineChart) {
+                timelineChart.data.datasets[0].data = hourCounts.normal;
+                timelineChart.data.datasets[1].data = hourCounts.threats;
+                timelineChart.update();
+            } else {
+                timelineChart = new Chart(timelineCtx, {
+                    type: 'line',
+                    data: {
+                        labels: Array.from({length: 24}, (_, i) => i + ':00'),
+                        datasets: [
+                            {
+                                label: 'Normal Activity',
+                                data: hourCounts.normal,
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Threats',
+                                data: hourCounts.threats,
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+        }
+        
+        // Update risk distribution chart
+        function updateRiskChart() {
+            // Count threats by severity
+            let highThreats = 0;
+            let mediumThreats = 0;
+            let lowThreats = 0;
+            
+            threatData.forEach(threat => {
+                if (threat.threat_score > 0.7) highThreats++;
+                else if (threat.threat_score > 0.4) mediumThreats++;
+                else lowThreats++;
+            });
+            
+            // Create or update chart
+            const riskCtx = document.getElementById('riskChart').getContext('2d');
+            
+            if (riskChart) {
+                riskChart.data.datasets[0].data = [highThreats, mediumThreats, lowThreats];
+                riskChart.update();
+            } else {
+                riskChart = new Chart(riskCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+                        datasets: [{
+                            data: [highThreats, mediumThreats, lowThreats],
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.8)',
+                                'rgba(255, 206, 86, 0.8)',
+                                'rgba(75, 192, 192, 0.8)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+        }
+        
+        // Update action chart
+        function updateActionChart() {
+            // Count actions for high-risk threats
+            const actionCounts = {};
+            
+            threatData.filter(t => t.threat_score > 0.5).forEach(threat => {
+                actionCounts[threat.action] = (actionCounts[threat.action] || 0) + 1;
+            });
+            
+            // Create or update chart
+            const actionCtx = document.getElementById('actionChart').getContext('2d');
+            
+            if (actionChart) {
+                actionChart.data.labels = Object.keys(actionCounts);
+                actionChart.data.datasets[0].data = Object.values(actionCounts);
+                actionChart.update();
+            } else {
+                actionChart = new Chart(actionCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(actionCounts),
+                        datasets: [{
+                            label: 'High Risk Activities',
+                            data: Object.values(actionCounts),
+                            backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Update resource chart
+        function updateResourceChart() {
+            // Count resources for high-risk threats
+            const resourceCounts = {};
+            
+            threatData.filter(t => t.threat_score > 0.5).forEach(threat => {
+                resourceCounts[threat.resource] = (resourceCounts[threat.resource] || 0) + 1;
+            });
+            
+            // Create or update chart
+            const resourceCtx = document.getElementById('resourceChart').getContext('2d');
+            
+            if (resourceChart) {
+                resourceChart.data.labels = Object.keys(resourceCounts);
+                resourceChart.data.datasets[0].data = Object.values(resourceCounts);
+                resourceChart.update();
+            } else {
+                resourceChart = new Chart(resourceCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(resourceCounts),
+                        datasets: [{
+                            label: 'Vulnerable Resources',
+                            data: Object.values(resourceCounts),
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Initialize the dashboard
+        async function initDashboard() {
+            // Show loading overlay
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            // Start the Python API
+            const apiRunning = await ensureApiRunning();
+            
+            if (apiRunning) {
+                // Generate initial demo data
+                await generateDemoData(15);
+                
+                // Hide loading overlay
+                document.getElementById('loadingOverlay').style.display = 'none';
+            } else {
+                // Handle API not running
+                document.getElementById('loadingOverlay').innerHTML = `
+                    <div class="spinner-container">
+                        <div class="text-danger mb-3">
+                            <i class="fas fa-exclamation-triangle fa-3x"></i>
+                        </div>
+                        <h4>Error: API Not Running</h4>
+                        <p>Please start the API server with:</p>
+                        <code>python standalone_api.py</code>
+                        <br><br>
+                        <button class="btn btn-primary" onClick="window.location.reload()">Try Again</button>
+                    </div>
+                `;
+            }
+        }
+        
+        // Add event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            initDashboard();
+            
+            // Generate data button
+            document.getElementById('generateDataBtn').addEventListener('click', function() {
+                generateDemoData(10);
+            });
+            
+            // Generate more data button
+            document.getElementById('generateMoreBtn').addEventListener('click', function() {
+                generateDemoData(10);
+            });
+        });
+    </script>
+</body>
+</html>

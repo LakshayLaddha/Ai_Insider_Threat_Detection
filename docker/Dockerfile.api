@@ -1,20 +1,25 @@
-# Base image
-FROM python:3.10-slim
+FROM python:3.11-slim
 
-# Set working directory
+
 WORKDIR /app
 
-# Copy requirements and install dependencies
-COPY ../../requirements.txt .
+# Copy requirements first to leverage Docker cache
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the FastAPI code
-COPY ../../api_service ./api_service
-COPY ../../ml_model ./ml_model
-COPY ../../config ./config
+# Copy the project files
+COPY data_ingestion/ ./data_ingestion/
+COPY data_preprocessing/ ./data_preprocessing/
+COPY ml_model/ ./ml_model/
+COPY api_service/ ./api_service/
+COPY config/ ./config/
+COPY logs/ ./logs/
 
-# Expose the port FastAPI will run on
+# Make the API directory the working directory
+WORKDIR /app/api_service
+
+# Expose the API port
 EXPOSE 8000
 
-# Run the API
-CMD ["uvicorn", "api_service.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Command to run the API
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

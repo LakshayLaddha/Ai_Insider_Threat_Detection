@@ -1,0 +1,31 @@
+{
+  "model_type": "IsolationForest",
+  "training_date": "2025-04-09T00:48:03.196794",
+  "num_features": 21,
+  "feature_names": [
+    "hour",
+    "day_of_week",
+    "user_id_admin",
+    "user_id_system",
+    "user_id_lakshay",
+    "user_id_other",
+    "action_read",
+    "action_write",
+    "action_login",
+    "action_download",
+    "action_delete",
+    "action_modify",
+    "action_execute",
+    "resource_financial",
+    "resource_customer",
+    "resource_employee",
+    "resource_source",
+    "resource_infrastructure",
+    "resource_security",
+    "data_size",
+    "is_suspicious_ip"
+  ],
+  "n_estimators": 100,
+  "contamination": 0.2,
+  "threshold": -0.2
+}

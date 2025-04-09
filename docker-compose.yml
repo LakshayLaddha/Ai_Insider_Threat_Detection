@@ -1,0 +1,43 @@
+version: '3'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/app/logs
+      - ./ml_model/trained_models:/app/ml_model/trained_models
+    environment:
+      - MODEL_DIR=/app/ml_model/trained_models
+      - LOGS_DIR=/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    container_name: api  # Explicitly set the container name
+      
+  dashboard:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://api:8000  # Use container name for internal network
+    depends_on:
+      - api
+
+  # Optional: Add a data generation service
+  data-generator:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    command: python /app/data_ingestion/simulate_log_generator.py
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - api
