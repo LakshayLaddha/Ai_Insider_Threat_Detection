@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import time
 from starlette.middleware.base import BaseHTTPMiddleware
+from .routes.dashboard import router as dashboard_router
 import logging
 
 from .core.config import settings
@@ -23,7 +24,7 @@ app = FastAPI(
 # Set up CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_origins=["*"],  # Allow all origins (you can restrict this in production)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -95,4 +96,10 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+app.include_router(
+    dashboard_router,
+    prefix="/api/v1/dashboard",
+    tags=["dashboard"],
 )

@@ -19,6 +19,9 @@ interface AuthContextType {
   logout: () => void;
 }
 
+// API configuration - can be updated if needed
+const API_BASE_URL = 'http://localhost:8000';
+
 // Create context
 export const AuthContext = createContext<AuthContextType>({
   user: null,
@@ -46,7 +49,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
 
     try {
       // Fetch user profile using token
-      const response = await fetch('http://localhost:8000/api/v1/users/me', {
+      const response = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -73,17 +76,19 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
     setError(null);
     
     try {
+      console.log(`Attempting to connect to backend at: ${API_BASE_URL}/api/v1/login`);
+      
       // Create form data - IMPORTANT: FastAPI OAuth2 expects form data, not JSON
       const formData = new URLSearchParams();
       formData.append('username', username); // OAuth2 standard field name
       formData.append('password', password);
 
-      const response = await fetch('http://localhost:8000/api/v1/login', {
+      const response = await fetch(`${API_BASE_URL}/api/v1/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded', // CHANGED: use form urlencoded
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: formData.toString(), // CHANGED: send as form data
+        body: formData.toString(),
       });
 
       if (!response.ok) {
@@ -101,18 +106,29 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({ children }) => {
       const data = await response.json();
       localStorage.setItem('token', data.access_token);
       
+      console.log('Login successful, token received');
+      
       // Store user data if available in response
       if (data.user) {
+        console.log('User data received with token');
         setUser(data.user);
+        navigate('/dashboard');
       } else {
         // Otherwise fetch user profile
+        console.log('Fetching user profile...');
         await checkAuth();
+        navigate('/dashboard');
       }
-      
-      navigate('/dashboard');
     } catch (error: any) {
       console.error('Login error:', error);
-      setError(error.message || 'Login failed');
+      
+      // Be more descriptive about connection errors
+      if (error.message === 'Failed to fetch') {
+        setError('Cannot connect to server. Please check if the backend is running at ' + 
+                 `${API_BASE_URL} and that there are no network issues.`);
+      } else {
+        setError(error.message || 'Login failed');
+      }
       throw error;
     } finally {
       setIsLoading(false);
