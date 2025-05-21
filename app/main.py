@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import time
 from starlette.middleware.base import BaseHTTPMiddleware
-from .routes.dashboard import router as dashboard_router
 import logging
 
 from .core.config import settings
@@ -21,10 +20,10 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Set up CORS
+# Set up CORS - ONCE, not twice
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (you can restrict this in production)
+    allow_origins=["http://localhost:3000", "*"],  # Allow localhost:3000 and any origin for development
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,7 +40,7 @@ class ProcessTimeMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(ProcessTimeMiddleware)
 
-# Include routers
+# Include routers - ONCE, not twice
 app.include_router(
     auth.router,
     prefix=f"{settings.API_V1_STR}",
@@ -66,10 +65,10 @@ app.include_router(
     tags=["dashboard"]
 )
 
-# Add health check endpoint with correct return value
+# Add health check endpoint - ONCE, not twice
 @app.get("/health", status_code=200)
 def health_check():
-    return {"status": "healthy"}  # Changed from "ok" to "healthy"
+    return {"status": "healthy"}
 
 # Root endpoint
 @app.get("/")
@@ -79,27 +78,15 @@ def root():
 # Startup event to create tables
 @app.on_event("startup")
 def on_startup():
-    # Import models here to make sure they're registered with SQLAlchemy
-    from .models import user, activity
-    
-    # Create tables directly
-    Base.metadata.create_all(bind=engine)
-    logger.info("Application startup complete")
-
-@app.get("/health", status_code=200)
-def health_check():
-    return {"status": "healthy"}  # Changed from "ok" to "healthy"
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.include_router(
-    dashboard_router,
-    prefix="/api/v1/dashboard",
-    tags=["dashboard"],
-)
+    try:
+        # Import models to register with SQLAlchemy
+        # Make sure your file is named alert.py (singular), not alerts.py (plural)
+        from .models import user, activity
+        from .models.alert import Alert  # Import Alert directly
+        
+        # Create tables
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables created successfully")
+        logger.info("Application startup complete")
+    except Exception as e:
+        logger.error(f"Error during startup: {e}")

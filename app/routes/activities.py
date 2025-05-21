@@ -1,3 +1,7 @@
+# Change this line at the top of your file:
+from ..models.activity import LoginActivity, FileActivity
+from app.models.alert import Alert  # Use absolute import
+
 from typing import Any, List, Dict, Optional
 from datetime import datetime, timedelta
 
@@ -7,7 +11,7 @@ from sqlalchemy import func
 
 from ..database import get_db
 from ..models.user import User
-from ..models.activity import LoginActivity, FileActivity, Alert
+
 from ..schemas.activity import (
     LoginActivity as LoginActivitySchema,
     LoginActivityCreate, 

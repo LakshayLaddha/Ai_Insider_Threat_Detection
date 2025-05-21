@@ -1,109 +1,79 @@
-from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from typing import Optional, List, Dict, Any
 from datetime import datetime
+from pydantic import BaseModel, EmailStr, validator
 
 
 class LoginActivityBase(BaseModel):
+    user_email: str
     ip_address: str
     user_agent: Optional[str] = None
-    device_info: Optional[str] = None
-    session_id: Optional[str] = None
+    country: Optional[str] = None
+    city: Optional[str] = None
+    coordinates: Optional[str] = None
+    timestamp: Optional[datetime] = None
+    success: bool = True
+    is_anomalous: bool = False
 
 
 class LoginActivityCreate(LoginActivityBase):
-    user_id: int
-    success: bool = True
-
-
-class LoginActivityUpdate(BaseModel):
-    logout_time: Optional[datetime] = None
-    is_suspicious: Optional[bool] = None
+    pass
 
 
 class LoginActivity(LoginActivityBase):
     id: int
-    user_id: int
-    timestamp: datetime
-    success: bool
-    country: Optional[str] = None
-    city: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    logout_time: Optional[datetime] = None
-    is_unusual_location: bool
-    is_unusual_time: bool
-    is_suspicious: bool
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # formerly orm_mode
 
 
 class FileActivityBase(BaseModel):
-    activity_type: str  # download, upload, delete, view
-    file_path: Optional[str] = None
-    file_name: str
-    file_size: Optional[int] = None
-    file_type: Optional[str] = None
-    application: Optional[str] = None
-    ip_address: str
-    device_info: Optional[str] = None
+    user_email: str
+    file_path: str
+    action: str  # read, write, delete, etc.
+    ip_address: Optional[str] = None
+    timestamp: Optional[datetime] = None
+    is_anomalous: bool = False
+    details: Optional[str] = None
 
 
 class FileActivityCreate(FileActivityBase):
-    user_id: int
-    metadata: Optional[Dict[str, Any]] = None
-
-
-class FileActivityUpdate(BaseModel):
-    is_sensitive_data: Optional[bool] = None
-    is_unusual_volume: Optional[bool] = None
-    is_unusual_type: Optional[bool] = None
-    is_suspicious: Optional[bool] = None
+    pass
 
 
 class FileActivity(FileActivityBase):
     id: int
-    user_id: int
-    timestamp: datetime
-    is_sensitive_data: bool
-    is_unusual_volume: bool
-    is_unusual_type: bool
-    is_suspicious: bool
-    metadata: Optional[Dict[str, Any]] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # formerly orm_mode
 
 
 class AlertBase(BaseModel):
     alert_type: str
     severity: str
-    description: str
+    message: str
+    source_ip: Optional[str] = None
+    location: Optional[str] = None
+    timestamp: Optional[datetime] = None
+    resolved: bool = False
+    resolved_by: Optional[int] = None
+    resolved_at: Optional[datetime] = None
 
 
 class AlertCreate(AlertBase):
-    user_id: int
-    login_activity_id: Optional[int] = None
-    file_activity_id: Optional[int] = None
+    pass
 
 
 class AlertUpdate(BaseModel):
-    is_resolved: Optional[bool] = None
-    resolved_at: Optional[datetime] = None
+    alert_type: Optional[str] = None
+    severity: Optional[str] = None
+    message: Optional[str] = None
+    resolved: Optional[bool] = None
     resolved_by: Optional[int] = None
-    resolution_notes: Optional[str] = None
+    resolved_at: Optional[datetime] = None
 
 
 class Alert(AlertBase):
     id: int
-    timestamp: datetime
-    user_id: int
-    login_activity_id: Optional[int] = None
-    file_activity_id: Optional[int] = None
-    is_resolved: bool
-    resolved_at: Optional[datetime] = None
-    resolved_by: Optional[int] = None
-    resolution_notes: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # formerly orm_mode
