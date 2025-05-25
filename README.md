@@ -1,122 +1,114 @@
-# Sentinel: Security Monitoring and Threat Detection API
+# Sentinel Security: AI Insider Threat Detection for Cloud
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.95.0-green)
-![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
+*Last Updated: 2025-05-25 18:38:42*
 
-Sentinel is a comprehensive security monitoring and threat detection system designed to track user activities, detect suspicious behavior, and alert administrators to potential security threats.
+## Project Overview
 
-## Features
+Sentinel Security is an advanced AI-powered insider threat detection system designed to monitor and analyze cloud environment activities to identify suspicious behaviors and potential security breaches. The system combines machine learning algorithms with traditional security monitoring techniques to provide a comprehensive security solution for organizations using cloud services.
 
-- **User Authentication**: Secure JWT-based authentication system with role-based access control
-- **Activity Monitoring**: Track login attempts and file operations
-- **Geolocation Tracking**: Record and analyze login locations for suspicious patterns
-- **Threat Detection**: Automatic detection of unusual user behavior
-- **Alert System**: Real-time notifications for suspicious activities
-- **Dashboard**: Comprehensive overview of system security status
-- **Admin Controls**: User management and security configuration
+The project implements a modern full-stack architecture with a Python FastAPI backend powering the AI threat detection engine and a React frontend providing an intuitive security monitoring dashboard.
 
-## Setup Instructions
+## Development Team
 
-### Prerequisites
+- Lakshay Laddha(Lead Developer)
+- Harsh PS, Piyush Kumar
 
-- Python 3.11+
-- PostgreSQL (or SQLite for development)
+## Technology Stack
 
-### Installation
+### Backend Technologies
+- **Python 3.9+**: Core programming language
+- **FastAPI**: High-performance API framework
+- **SQLAlchemy**: ORM for database interactions
+- **Pydantic**: Data validation and settings management
+- **SQLite**: Database for storing user data, alerts, and activity logs
+- **Scikit-learn/TensorFlow**: For AI models that detect anomalous behaviors
+- **JWT Authentication**: For secure user authentication
+- **Geolocation Services**: For tracking login locations and detecting geographic anomalies
 
-1. Clone the repository:
+### Frontend Technologies
+- **React 18**: JavaScript library for building the user interface
+- **TypeScript**: For type-safe code
+- **Material-UI**: Component library for consistent UI design
+- **Chart.js**: For data visualization dashboards
+- **React Router**: For application navigation
+- **Axios**: For API communication with the backend
+- **TailwindCSS**: For utility-first CSS styling
+
+## Key Features
+
+### AI-Powered Threat Detection
+- **Anomaly Detection**: Machine learning models that establish baseline user behavior and flag deviations
+- **Pattern Recognition**: Identification of suspicious access patterns across cloud resources
+- **Contextual Analysis**: Evaluation of activities within the context of user roles and permissions
+
+### Comprehensive Security Dashboard
+- **Overview Dashboard**: Real-time visualization of security posture
+- **Security Alerts**: Prioritized list of potential security incidents
+- **Login Activity Monitoring**: Tracking of all authentication events
+- **File Activity Tracking**: Monitoring of sensitive file access and modifications
+- **User Management**: Administrative interface for managing system users
+- **Settings**: Configurable security parameters and notification preferences
+
+### Advanced Security Monitoring
+- **Geographic Login Analysis**: Detection of impossible travel scenarios
+- **Out-of-hours Activity Detection**: Flagging activities occurring outside normal working hours
+- **Privilege Escalation Monitoring**: Detection of unusual permission changes
+- **Data Exfiltration Detection**: Identification of unusual file download patterns
+- **Brute Force Attack Detection**: Recognition of repeated failed login attempts
+
+## Project Structure
+
+
+## Installation
+
+### Backend Setup
+
+1. Create a virtual environment:
    ```bash
-   git clone https://github.com/yourusername/sentinel.git
-   cd sentinel
-Create and activate a virtual environment:
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-Install dependencies:
+2. Install dependencies:
+   pip install -r requirements.txt
+   
+3. Initialize the database:
+   python setup.py
+   
+4. Create an admin user:
+   python create_admin.py
 
-bash
-pip install -r requirements.txt
-Set up environment variables:
+5. Run the backend server:
+   python run.py
 
-bash
-cp .env.example .env
-# Edit .env with your settings
-Run database migrations:
+### Frontend Setup
 
-bash
-alembic upgrade head
-Start the development server:
+1. Navigate to the frontend directory:
+   cd frontend
 
-bash
-uvicorn app.main:app --reload
-Docker Setup
-Alternatively, use Docker Compose:
+2. Install dependencies:
+   npm install
 
-bash
-docker-compose up -d
-API Endpoints
-Authentication
-POST /api/v1/login - Obtain access token
-POST /api/v1/logout - End user session
-Users
-GET /api/v1/users/ - List all users (admin)
-POST /api/v1/users/ - Create new user (admin)
-GET /api/v1/users/me - Get current user info
-GET /api/v1/users/{user_id} - Get specific user info
-PUT /api/v1/users/{user_id} - Update user details
-DELETE /api/v1/users/{user_id} - Remove user (admin)
-Activities
-GET /api/v1/activities/logins - List login activities
-POST /api/v1/activities/logins - Record new login manually
-GET /api/v1/activities/files - List file activities
-POST /api/v1/activities/files - Record file activity
-POST /api/v1/activities/file - Simplified file activity recording
-GET /api/v1/activities/alerts - List security alerts
-POST /api/v1/activities/alerts - Create new security alert
-PUT /api/v1/activities/alerts/{alert_id} - Update alert status
-Dashboard
-GET /api/v1/dashboard - Get security overview data
-Health Check
-GET /health - Check service health
-Project Structure
-Code
-sentinel/
-├── app/
-│   ├── core/             # Core configuration
-│   ├── models/           # Database models
-│   ├── routes/           # API routes
-│   ├── schemas/          # Pydantic schemas
-│   ├── services/         # Business logic services
-│   ├── utils/            # Utility functions
-│   ├── database.py       # Database connection
-│   └── main.py           # FastAPI application
-├── migrations/           # Alembic migrations
-├── tests/                # Test suite
-├── docker/               # Docker configuration
-├── .env.example          # Environment variables template
-├── docker-compose.yml    # Docker Compose configuration
-├── requirements.txt      # Python dependencies
-└── README.md             # This file
-Technologies Used
-FastAPI: High-performance API framework
-SQLAlchemy: SQL toolkit and ORM
-Pydantic: Data validation and settings management
-Alembic: Database migrations
-PyJWT: JSON Web Token implementation
-Passlib: Password hashing utilities
-Pytest: Testing framework
-Development
-Running Tests
-bash
-pytest
-Creating Migrations
-bash
-alembic revision --autogenerate -m "Description of changes"
-alembic upgrade head
-License
-MIT License
+3. Start the development server:
+   npm start
 
-Last Updated
-2025-05-13
+
+### Demo & Usage
+1. Access the web interface at http://localhost:3000
+2. Log in with your admin credentials
+3. Navigate the dashboard to monitor security alerts, login activities, and file access events
+4. For demonstration purposes, you can use the threat simulator:
+
+   python threat_simulator.py --events 50
+
+### Future Enhancements
+
+Advanced AI Models for better threat detection
+Integration with SIEM Systems
+Automated Response Actions
+Expanded Cloud Coverage for additional providers
+Mobile Application for on-the-go monitoring
+
+### License
+This project is proprietary and confidential.
+
+© 2025 Sentinel Security Team. All rights reserved.

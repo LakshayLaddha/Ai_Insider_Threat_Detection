@@ -1,3 +1,6 @@
+# Last Updated: 2025-05-25 18:51:09
+# User: LakshayLaddha
+
 # Python
 __pycache__/
 *.py[cod]
@@ -36,6 +39,9 @@ venv.bak/
 *.sqlite
 *.sqlite3
 *.db-journal
+# Keep database backups
+!*.db.backup
+!sentinel.db.backup
 
 # Testing
 .coverage
@@ -81,13 +87,11 @@ uploads/
 temp/
 node_modules/
 
-# Other
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-*.pem
+# Frontend specific
+/frontend/build/
+/frontend/coverage/
+/frontend/.cache/
+/frontend/.next/
 
 # Jupyter Notebooks
 .ipynb_checkpoints
@@ -95,7 +99,27 @@ node_modules/
 profile_default/
 ipython_config.py
 
+# ML Models (exclude large model files)
+*.h5
+*.pkl
+*.joblib
+models/saved_models/*
+!models/saved_models/.gitkeep
 
+# Certificate files
+*.pem
+*.crt
+*.key
+*.csr
+*.srl
 
-create_admin.py
-threat_simulator.py
+# Other
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Keep important scripts
+!create_admin.py
+!threat_simulator.py
