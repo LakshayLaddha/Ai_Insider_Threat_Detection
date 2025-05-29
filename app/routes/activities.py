@@ -1,16 +1,14 @@
-# Change this line at the top of your file:
-from ..models.activity import LoginActivity, FileActivity
-from app.models.alert import Alert  # Use absolute import
-
 from typing import Any, List, Dict, Optional
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, desc
 
 from ..database import get_db
 from ..models.user import User
+from ..models.activity import LoginActivity, FileActivity
+from ..models.alert import Alert
 
 from ..schemas.activity import (
     LoginActivity as LoginActivitySchema,
@@ -23,7 +21,7 @@ from ..schemas.activity import (
 )
 from .auth import get_current_user, get_current_active_admin
 from ..services.detection import threat_detection
-from ..services.geoip import geoip_service  # Make sure this matches your IPinfo service name
+from ..services.geoip import geoip_service
 
 router = APIRouter()
 
@@ -37,7 +35,7 @@ def read_login_activities(
     user_id: Optional[int] = None,
     from_date: Optional[datetime] = None,
     to_date: Optional[datetime] = None,
-    is_suspicious: Optional[bool] = None,
+    is_anomalous: Optional[bool] = None,
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
@@ -62,9 +60,9 @@ def read_login_activities(
     if to_date:
         query = query.filter(LoginActivity.timestamp <= to_date)
     
-    # Apply suspicious filter
-    if is_suspicious is not None:
-        query = query.filter(LoginActivity.is_suspicious == is_suspicious)
+    # Apply anomalous filter
+    if is_anomalous is not None:
+        query = query.filter(LoginActivity.is_anomalous == is_anomalous)
     
     # Order and paginate
     activities = query.order_by(LoginActivity.timestamp.desc()).offset(skip).limit(limit).all()
@@ -83,7 +81,7 @@ def create_login_activity(
     Create new login activity record.
     Admin access only.
     """
-    # Add IPinfo information (assuming your IPinfo service is named geoip_service)
+    # Add IPinfo information
     geo_data = geoip_service.get_location_data(activity_in.ip_address)
     
     # Create activity object
@@ -107,8 +105,9 @@ def create_login_activity(
             user_id=activity_in.user_id,
             alert_type="login",
             severity=severity,
-            description=description,
-            login_activity_id=db_activity.id,
+            message=description,
+            source_ip=activity_in.ip_address,
+            location=geo_data.get("country", "Unknown"),
         )
         db.add(alert)
         db.commit()
@@ -126,8 +125,8 @@ def read_file_activities(
     user_id: Optional[int] = None,
     from_date: Optional[datetime] = None,
     to_date: Optional[datetime] = None,
-    activity_type: Optional[str] = None,
-    is_suspicious: Optional[bool] = None,
+    action: Optional[str] = None,
+    is_anomalous: Optional[bool] = None,
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
@@ -152,13 +151,13 @@ def read_file_activities(
     if to_date:
         query = query.filter(FileActivity.timestamp <= to_date)
     
-    # Apply type filter
-    if activity_type:
-        query = query.filter(FileActivity.activity_type == activity_type)
+    # Apply action filter
+    if action:
+        query = query.filter(FileActivity.action == action)
     
-    # Apply suspicious filter
-    if is_suspicious is not None:
-        query = query.filter(FileActivity.is_suspicious == is_suspicious)
+    # Apply anomalous filter
+    if is_anomalous is not None:
+        query = query.filter(FileActivity.is_anomalous == is_anomalous)
     
     # Order and paginate
     activities = query.order_by(FileActivity.timestamp.desc()).offset(skip).limit(limit).all()
@@ -166,7 +165,6 @@ def read_file_activities(
     return activities
 
 
-# Add the file endpoint that's missing in tests
 @router.post("/file", status_code=201)
 def create_file_activity_simple(
     activity_in: dict = Body(...),
@@ -175,16 +173,17 @@ def create_file_activity_simple(
 ) -> dict:
     """
     Create new file activity record with simplified input.
-    This matches the endpoint expected in your tests.
     """
     # Create activity data from input
     activity_data = {
         "user_id": current_user.id,
+        "user_email": current_user.email,
         "file_path": activity_in.get("file_path"),
-        "activity_type": activity_in.get("action", "VIEW"),
+        "action": activity_in.get("action", "VIEW"),
         "ip_address": activity_in.get("ip_address"),
-        "device_info": activity_in.get("device_info"),
-        "file_name": activity_in.get("file_path", "").split("/")[-1] if "/" in activity_in.get("file_path", "") else activity_in.get("file_path", "")
+        "timestamp": datetime.utcnow(),
+        "is_anomalous": False,
+        "details": activity_in.get("details")
     }
     
     # Create and save activity
@@ -198,10 +197,8 @@ def create_file_activity_simple(
         "id": db_activity.id,
         "user_id": db_activity.user_id,
         "file_path": db_activity.file_path,
-        "action": db_activity.activity_type,  # Map activity_type to action for test expectation
+        "action": db_activity.action,
         "ip_address": db_activity.ip_address,
-        "device_info": db_activity.device_info,
-        "file_name": db_activity.file_name,
         "timestamp": db_activity.timestamp
     }
 
@@ -217,7 +214,7 @@ def create_file_activity(
     Create new file activity record.
     """
     # Ensure user is creating an activity for themselves unless admin
-    if activity_in.user_id != current_user.id and not current_user.is_admin:
+    if activity_in.user_email != current_user.email and not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only create activities for your own account",
@@ -225,10 +222,10 @@ def create_file_activity(
     
     # Create activity object
     activity_data = activity_in.dict()
+    activity_data['timestamp'] = datetime.utcnow()
     
     # Check for anomalies
-    activity_obj = FileActivity(**activity_data)
-    anomalies = threat_detection.detect_file_anomalies(db, activity_in.user_id, activity_obj)
+    anomalies = threat_detection.detect_file_anomalies(db, current_user.id, activity_in)
     activity_data.update(anomalies)
     
     # Create and save activity
@@ -241,11 +238,12 @@ def create_file_activity(
     should_create, severity, description = threat_detection.should_create_alert(anomalies)
     if should_create:
         alert = Alert(
-            user_id=activity_in.user_id,
+            user_id=current_user.id,
             alert_type="file",
             severity=severity,
-            description=description,
-            file_activity_id=db_activity.id,
+            message=description,
+            source_ip=activity_in.ip_address,
+            location="Unknown",
         )
         db.add(alert)
         db.commit()
@@ -263,7 +261,7 @@ def read_alerts(
     user_id: Optional[int] = None,
     from_date: Optional[datetime] = None,
     to_date: Optional[datetime] = None,
-    is_resolved: Optional[bool] = None,
+    resolved: Optional[bool] = None,
     severity: Optional[str] = None,
     current_user: User = Depends(get_current_user),
 ) -> Any:
@@ -290,8 +288,8 @@ def read_alerts(
         query = query.filter(Alert.timestamp <= to_date)
     
     # Apply resolved filter
-    if is_resolved is not None:
-        query = query.filter(Alert.is_resolved == is_resolved)
+    if resolved is not None:
+        query = query.filter(Alert.resolved == resolved)
     
     # Apply severity filter
     if severity:
@@ -314,7 +312,10 @@ def create_alert(
     Create new alert manually.
     Admin access only.
     """
-    db_alert = Alert(**alert_in.dict())
+    alert_data = alert_in.dict()
+    alert_data['timestamp'] = datetime.utcnow()
+    
+    db_alert = Alert(**alert_data)
     db.add(db_alert)
     db.commit()
     db.refresh(db_alert)
@@ -352,7 +353,7 @@ def update_alert(
     update_data = alert_in.dict(exclude_unset=True)
     
     # If resolving the alert and resolved_by is not set, set it to current user
-    if update_data.get("is_resolved") and not update_data.get("resolved_by"):
+    if update_data.get("resolved") and not update_data.get("resolved_by"):
         update_data["resolved_by"] = current_user.id
         update_data["resolved_at"] = datetime.now()
     
@@ -365,16 +366,15 @@ def update_alert(
     return alert
 
 
-# Add dashboard endpoint that's expected in tests
+# Add dashboard endpoint
 @router.get("/dashboard", response_model=Dict[str, Any])
-def get_dashboard_data(
+def get_activity_dashboard_data(
     db: Session = Depends(get_db),
     days: int = Query(7, ge=1, le=30),
-    current_user: User = Depends(get_current_active_admin),
+    current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Get aggregated data for dashboard.
-    This matches the endpoint expected in your tests.
+    Get aggregated data for activity dashboard.
     """
     result = {}
     start_date = datetime.now() - timedelta(days=days)
@@ -384,22 +384,31 @@ def get_dashboard_data(
     file_query = db.query(FileActivity).filter(FileActivity.timestamp >= start_date)
     alert_query = db.query(Alert).filter(Alert.timestamp >= start_date)
     
+    # If not admin, filter by user
+    if not current_user.is_admin:
+        login_query = login_query.filter(LoginActivity.user_id == current_user.id)
+        file_query = file_query.filter(FileActivity.user_id == current_user.id)
+        alert_query = alert_query.filter(Alert.user_id == current_user.id)
+    
     # Activity counts
     result["total_logins"] = login_query.count()
     result["total_file_activities"] = file_query.count()
     result["total_alerts"] = alert_query.count()
-    result["unresolved_alerts"] = alert_query.filter(Alert.is_resolved == False).count()
+    result["unresolved_alerts"] = alert_query.filter(Alert.resolved == False).count()
     
     # File activity breakdown by type
     file_types = db.query(
-        FileActivity.activity_type,
+        FileActivity.action,
         func.count(FileActivity.id).label("count")
     ).filter(
         FileActivity.timestamp >= start_date
     )
     
+    if not current_user.is_admin:
+        file_types = file_types.filter(FileActivity.user_id == current_user.id)
+    
     result["file_activity_types"] = {
-        r[0]: r[1] for r in file_types.group_by(FileActivity.activity_type).all()
+        r[0]: r[1] for r in file_types.group_by(FileActivity.action).all()
     }
     
     # Alert severity breakdown
@@ -410,36 +419,17 @@ def get_dashboard_data(
         Alert.timestamp >= start_date
     )
     
+    if not current_user.is_admin:
+        alert_severity = alert_severity.filter(Alert.user_id == current_user.id)
+    
     result["alert_severity"] = {
         r[0]: r[1] for r in alert_severity.group_by(Alert.severity).all()
     }
     
-    # Most active users (admin only)
-    active_users = db.query(
-        FileActivity.user_id,
-        func.count(FileActivity.id).label("activity_count")
-    ).filter(
-        FileActivity.timestamp >= start_date
-    ).group_by(
-        FileActivity.user_id
-    ).order_by(
-        func.count(FileActivity.id).desc()
-    ).limit(5).all()
-    
-    result["most_active_users"] = []
-    for user_id, count in active_users:
-        user = db.query(User).get(user_id)
-        if user:
-            result["most_active_users"].append({
-                "user_id": user_id,
-                "username": user.username,
-                "activity_count": count
-            })
-    
-    # Add recent activities key to match test expectations
-    recent_logins = db.query(LoginActivity).order_by(LoginActivity.timestamp.desc()).limit(10).all()
-    recent_file_activities = db.query(FileActivity).order_by(FileActivity.timestamp.desc()).limit(10).all()
-    recent_alerts = db.query(Alert).order_by(Alert.timestamp.desc()).limit(10).all()
+    # Recent activities
+    recent_logins = login_query.order_by(LoginActivity.timestamp.desc()).limit(10).all()
+    recent_file_activities = file_query.order_by(FileActivity.timestamp.desc()).limit(10).all()
+    recent_alerts = alert_query.order_by(Alert.timestamp.desc()).limit(10).all()
     
     result["recent_activities"] = {
         "logins": [
@@ -447,8 +437,12 @@ def get_dashboard_data(
                 "id": login.id,
                 "timestamp": login.timestamp,
                 "user_id": login.user_id,
+                "user_email": login.user_email,
                 "success": login.success,
                 "ip_address": login.ip_address,
+                "country": login.country,
+                "city": login.city,
+                "is_anomalous": login.is_anomalous,
             }
             for login in recent_logins
         ],
@@ -457,8 +451,10 @@ def get_dashboard_data(
                 "id": activity.id,
                 "timestamp": activity.timestamp,
                 "user_id": activity.user_id,
-                "file_name": activity.file_name,
-                "activity_type": activity.activity_type,
+                "user_email": activity.user_email,
+                "file_path": activity.file_path,
+                "action": activity.action,
+                "is_anomalous": activity.is_anomalous,
             }
             for activity in recent_file_activities
         ],
@@ -468,7 +464,10 @@ def get_dashboard_data(
                 "timestamp": alert.timestamp,
                 "alert_type": alert.alert_type,
                 "severity": alert.severity,
-                "is_resolved": alert.is_resolved,
+                "message": alert.message,
+                "resolved": alert.resolved,
+                "source_ip": alert.source_ip,
+                "location": alert.location,
             }
             for alert in recent_alerts
         ]
