@@ -56,36 +56,15 @@ const Layout: React.FC = () => {
           </NavLink>
           
           {user?.is_admin && (
-            <>
-              <NavLink 
-                to="/users" 
-                className={({ isActive }) => 
-                  `block py-2 px-4 ${isActive ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700'}`
-                }
-              >
-                User Management
-              </NavLink>
-              
-              {/* Added Threat Simulator Link for Admins */}
-              <NavLink 
-                to="/simulator" 
-                className={({ isActive }) => 
-                  `block py-2 px-4 ${isActive ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700'}`
-                }
-              >
-                Threat Simulator
-              </NavLink>
-            </>
+            <NavLink 
+              to="/users" 
+              className={({ isActive }) => 
+                `block py-2 px-4 ${isActive ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700'}`
+              }
+            >
+              User Management
+            </NavLink>
           )}
-          
-          <NavLink 
-            to="/settings" 
-            className={({ isActive }) => 
-              `block py-2 px-4 ${isActive ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700'}`
-            }
-          >
-            Settings
-          </NavLink>
         </nav>
       </div>
       

@@ -8,8 +8,6 @@ import Alerts from './pages/Alerts';
 import UserManagement from './pages/UserManagement';
 import LoginActivity from './pages/activity/LoginActivity';
 import FileActivity from './pages/activity/FileActivity';
-import Settings from './pages/Settings';
-import ThreatSimulator from './pages/admin/ThreatSimulator';
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -43,9 +41,6 @@ const AppRoutes = () => {
         <Route path="activity/logins" element={<LoginActivity />} />
         <Route path="activity/files" element={<FileActivity />} />
         <Route path="users" element={<UserManagement />} />
-        <Route path="settings" element={<Settings />} />
-        {/* Added Threat Simulator route */}
-        <Route path="simulator" element={<ThreatSimulator />} />
       </Route>
       
       {/* Catch all route */}
